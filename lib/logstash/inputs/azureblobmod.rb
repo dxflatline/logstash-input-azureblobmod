@@ -303,7 +303,7 @@ class LogStash::Inputs::LogstashInputAzureblobmod < LogStash::Inputs::Base
     local_path_prefix.each do |prefix|
        if prefix.include? "$RANGE"
           rangevar = prefix.match(/.*\$RANGE_(\d+).*/).to_a
-          (0..rangevars).each do |n|
+          (0..rangevar).each do |n|
              path_prefix_new.push prefix.gsub(/\$RANGE_\d+\$/,n)
           end
        else
