@@ -291,7 +291,7 @@ class LogStash::Inputs::LogstashInputAzureblobmod < LogStash::Inputs::Base
 
   # MODIFICATION START: List blobs based on prefix
   # List all the blobs in the given container.
-  def list_all_blobs(local_azure_blob, local_container, local_storage_account_name, local_path_prefix)
+  def list_all_blobs(local_azure_blob, local_container, local_storage_account_name, local_path_prefix, eval_older)
     #@logger.info("[#{local_storage_account_name}]: Looking for blobs in #{local_path_prefix.length} paths")
     now_time = DateTime.now.new_offset(0)
     blobs = Set.new []
@@ -318,15 +318,18 @@ class LogStash::Inputs::LogstashInputAzureblobmod < LogStash::Inputs::Base
          prefix = prefix.gsub("$DATE$",now_time.strftime("%y%m%d%H"))
          @logger.info("[#{local_storage_account_name}] Traversing path: #{prefix}")
          # Need to limit the returned number of the returned entries to avoid out of memory exception.
-         #entries = local_azure_blob.list_blobs(local_container, { :timeout => 60, :marker => continuation_token, :prefix => prefix })
          entries = local_azure_blob.list_blobs(local_container, { :timeout => 60, :marker => continuation_token, :max_results => @blob_list_page_size, :prefix => prefix })
          if (entries.length == @blob_list_page_size)
              @logger.info("[#{local_storage_account_name}] Blob list page limit #{blob_list_page_size} reached.")
          end
          entries.each do |entry|
-             entry_last_modified = DateTime.parse(entry.properties[:last_modified])
-             elapsed_seconds = ((now_time - entry_last_modified) * 24 * 60 * 60).to_i
-             if (elapsed_seconds <= @ignore_older)
+             if eval_older?
+                entry_last_modified = DateTime.parse(entry.properties[:last_modified])
+                elapsed_seconds = ((now_time - entry_last_modified) * 24 * 60 * 60).to_i
+                if (elapsed_seconds <= @ignore_older)
+                   blobs << entry
+                end
+             else
                 blobs << entry
              end
          end # each
@@ -394,12 +397,12 @@ class LogStash::Inputs::LogstashInputAzureblobmod < LogStash::Inputs::Base
     begin
       # MODIFICATION - START
       @logger.info("Started searching candidate blobs for reading")
-      all_blobs = list_all_blobs(@azure_blob, @container, @storage_account_name, @path_prefix)
+      all_blobs = list_all_blobs(@azure_blob, @container, @storage_account_name, @path_prefix, true)
       candidate_blobs = all_blobs.select { |item| (item.name.downcase != @registry_path) }
       @logger.info("Finished searching candidate blobs for reading")
       
       @logger.info("Started loading state properties from blob state")
-      registry_blobs = list_all_blobs(@state_azure_blob, @state_container, @state_storage_account_name, [""])
+      registry_blobs = list_all_blobs(@state_azure_blob, @state_container, @state_storage_account_name, [""], false)
       registry = registry_blobs.find { |item| item.name.downcase == @registry_path }
       @logger.info("Finished loading state properties from blob state")
       # MODIFICATION - END
