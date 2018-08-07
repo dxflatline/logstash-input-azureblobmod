@@ -323,7 +323,7 @@ class LogStash::Inputs::LogstashInputAzureblobmod < LogStash::Inputs::Base
              @logger.info("[#{local_storage_account_name}] Blob list page limit #{blob_list_page_size} reached.")
          end
          entries.each do |entry|
-             if eval_older?
+             if eval_older
                 entry_last_modified = DateTime.parse(entry.properties[:last_modified])
                 elapsed_seconds = ((now_time - entry_last_modified) * 24 * 60 * 60).to_i
                 if (elapsed_seconds <= @ignore_older)
