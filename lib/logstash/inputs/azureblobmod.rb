@@ -292,12 +292,27 @@ class LogStash::Inputs::LogstashInputAzureblobmod < LogStash::Inputs::Base
   # MODIFICATION START: List blobs based on prefix
   # List all the blobs in the given container.
   def list_all_blobs(local_azure_blob, local_container, local_storage_account_name, local_path_prefix)
-    @logger.info("[#{local_storage_account_name}]: Looking for blobs in #{local_path_prefix.length} paths")
+    #@logger.info("[#{local_storage_account_name}]: Looking for blobs in #{local_path_prefix.length} paths")
     now_time = DateTime.now.new_offset(0)
     blobs = Set.new []
     continuation_token = NIL
     @blob_list_page_size = 100 if @blob_list_page_size <= 0
+
+    # Mutate the prefix list if it contains RANGE placeholder
+    path_prefix_new = Array.new
     local_path_prefix.each do |prefix|
+       if prefix.include? "$RANGE"
+          rangevars = prefix.match(/.*\$RANGE_(\d+).*/).to_a
+          (0..rangevars[1]).each do |n|
+             path_prefix_new.push prefix.gsub(/\$RANGE_\d+\$/,n)
+          end
+       else
+          path_prefix_new.push prefix
+       end
+    end
+    @logger.info("[#{local_storage_account_name}]: Looking for blobs in #{path_prefix_new.length} paths")
+
+    path_prefix_new.each do |prefix|
       loop do
          @logger.info("[#{local_storage_account_name}] Traversing path: #{prefix}")
          # Need to limit the returned number of the returned entries to avoid out of memory exception.
