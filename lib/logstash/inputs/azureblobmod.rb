@@ -164,7 +164,7 @@ class LogStash::Inputs::LogstashInputAzureblobmod < LogStash::Inputs::Base
 
     # MODIFICATION - START
     @logger.info("Initialized access to target storage account")
-    state_client = Azure::Storage::Client.create(:storage_account_name => @state_storage_account_name, :storage_access_key => @state_storage_access_key, :storage_blob_host => "https://#{@stage_storage_account_name}.blob.#{@endpoint}", :user_agent_prefix => user_agent) 
+    state_client = Azure::Storage::Client.create(:storage_account_name => @state_storage_account_name, :storage_access_key => @state_storage_access_key, :storage_blob_host => "https://#{@state_storage_account_name}.blob.#{@endpoint}", :user_agent_prefix => user_agent) 
     @state_azure_blob = state_client.blob_client
     @logger.info("Initialized access to state storage account")
     # MODIFICATION - END
