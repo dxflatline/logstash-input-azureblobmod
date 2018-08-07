@@ -314,6 +314,8 @@ class LogStash::Inputs::LogstashInputAzureblobmod < LogStash::Inputs::Base
 
     path_prefix_new.each do |prefix|
       loop do
+         # TODO: Extract placeholder for data prefix
+         prefix = prefix.gsub("$DATE$",now_time.strftime("%y%m%d%H"))
          @logger.info("[#{local_storage_account_name}] Traversing path: #{prefix}")
          # Need to limit the returned number of the returned entries to avoid out of memory exception.
          #entries = local_azure_blob.list_blobs(local_container, { :timeout => 60, :marker => continuation_token, :prefix => prefix })
