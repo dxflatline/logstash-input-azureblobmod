@@ -160,13 +160,13 @@ class LogStash::Inputs::LogstashInputAzureblobmod < LogStash::Inputs::Base
     @azure_blob = client.blob_client
 
     # Add retry filter to the service object
-    @azure_blob.with_filter(Azure::Storage::Core::Filter::ExponentialRetryPolicyFilter.new)
+    #@azure_blob.with_filter(Azure::Storage::Core::Filter::ExponentialRetryPolicyFilter.new)
 
     # MODIFICATION - START
-    @logger.info("Initialized access to target storage account")
+    @logger.info("INIT - Access to target storage account complete")
     state_client = Azure::Storage::Client.create(:storage_account_name => @state_storage_account_name, :storage_access_key => @state_storage_access_key, :storage_blob_host => "https://#{@state_storage_account_name}.blob.#{@endpoint}", :user_agent_prefix => user_agent) 
     @state_azure_blob = state_client.blob_client
-    @logger.info("Initialized access to state storage account")
+    @logger.info("INIT - Access to state storage account complete")
     # MODIFICATION - END
   end # def register
 
@@ -174,7 +174,7 @@ class LogStash::Inputs::LogstashInputAzureblobmod < LogStash::Inputs::Base
     # we can abort the loop if stop? becomes true
     while !stop?
       process(queue)
-      @logger.debug("Hitting interval of #{@interval}s . . .")
+      @logger.info("Hitting interval of #{@interval}s")
       Stud.stoppable_sleep(@interval) { stop? }
     end # loop
   end # def run
@@ -376,11 +376,15 @@ class LogStash::Inputs::LogstashInputAzureblobmod < LogStash::Inputs::Base
   def register_for_read
     begin
       # MODIFICATION - START
+      @logger.info("Started searching candidate blobs for reading")
       all_blobs = list_all_blobs(@azure_blob, @container, @storage_account_name, @path_prefix)
       candidate_blobs = all_blobs.select { |item| (item.name.downcase != @registry_path) }
+      @logger.info("Finished searching candidate blobs for reading")
       
+      @logger.info("Started loading state properties from blob state")
       registry_blobs = list_all_blobs(@state_azure_blob, @state_container, @state_storage_account_name, [""])
       registry = registry_blobs.find { |item| item.name.downcase == @registry_path }
+      @logger.info("Finished loading state properties from blob state")
       # MODIFICATION - END
 
       start_index = 0
