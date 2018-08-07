@@ -301,7 +301,8 @@ class LogStash::Inputs::LogstashInputAzureblobmod < LogStash::Inputs::Base
       loop do
          @logger.info("[#{local_storage_account_name}] Traversing path: #{prefix}")
          # Need to limit the returned number of the returned entries to avoid out of memory exception.
-         entries = local_azure_blob.list_blobs(local_container, { :timeout => 60, :marker => continuation_token, :max_results => @blob_list_page_size, :prefix => prefix })
+         entries = local_azure_blob.list_blobs(local_container, { :timeout => 60, :marker => continuation_token, :prefix => prefix })
+         #entries = local_azure_blob.list_blobs(local_container, { :timeout => 60, :marker => continuation_token, :max_results => @blob_list_page_size, :prefix => prefix })
          if (entries.length == @blob_list_page_size)
              @logger.info("[#{local_storage_account_name}] Blob list page limit #{blob_list_page_size} reached.")
          end
